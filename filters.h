@@ -4,7 +4,7 @@
 void grayscale(Image *img)
 {
     int i,j,avg;
-    int dataLen=img->height*img->width*img->bytesPerPixel;
+    int dataLen=img->bitmap_header->height*img->bitmap_header->width*img->bytesPerPixel;
     for(i=0;i<dataLen;i+=img->bytesPerPixel)
     {
         for(j=0,avg=0;j<img->bytesPerPixel;j++)
@@ -18,7 +18,7 @@ void grayscale(Image *img)
 
 void blur(Image *img)
 {
-    int dataLen=img->height*img->width*img->bytesPerPixel;
+    int dataLen=img->bitmap_header->height*img->bitmap_header->width*img->bytesPerPixel;
     int i,j,k,sum;
     unsigned char *tmp=(unsigned char*)malloc(sizeof(unsigned char)*dataLen);
     memcpy(tmp,img->pixel_value,sizeof(tmp));
@@ -26,23 +26,23 @@ void blur(Image *img)
     printf(" %d ",strcmp(tmp,img->pixel_value));
     printf("\n");
 
-    for(i=1;i<img->height-1;i++)
+    for(i=1;i<img->bitmap_header->height-1;i++)
     {
-        for(j=1;j<img->width-1;j++)
+        for(j=1;j<img->bitmap_header->width-1;j++)
         {
             for(k=0;k<img->bytesPerPixel;k++)
             {
-                sum=tmp[(i - 1) * img->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k] +
-                    tmp[(i - 1) * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k] +
-                    tmp[(i - 1) * img->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k] +
-                    tmp[i * img->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k] +
-                    tmp[i * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k] +
-                    tmp[i * img->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k] +
-                    tmp[(i + 1) * img->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k] +
-                    tmp[(i + 1) * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k] +
-                    tmp[(i + 1) * img->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k];
+                sum=tmp[(i - 1) * img->bitmap_header->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k] +
+                    tmp[(i - 1) * img->bitmap_header->width * img->bytesPerPixel + j * img->bytesPerPixel + k] +
+                    tmp[(i - 1) * img->bitmap_header->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k] +
+                    tmp[i * img->bitmap_header->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k] +
+                    tmp[i * img->bitmap_header->width * img->bytesPerPixel + j * img->bytesPerPixel + k] +
+                    tmp[i * img->bitmap_header->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k] +
+                    tmp[(i + 1) * img->bitmap_header->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k] +
+                    tmp[(i + 1) * img->bitmap_header->width * img->bytesPerPixel + j * img->bytesPerPixel + k] +
+                    tmp[(i + 1) * img->bitmap_header->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k];
 
-                img->pixel_value[i * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k]=(unsigned char)sum/9;
+                img->pixel_value[i * img->bitmap_header->width * img->bytesPerPixel + j * img->bytesPerPixel + k]=(unsigned char)sum/9;
             }
         }
     }
@@ -56,25 +56,25 @@ void sharp(Image *img)
     //                     {-1, -1, -1}};
     
     int i,j,k,sum,m,n;
-    int dataLen=img->height*img->width*img->bytesPerPixel;
+    int dataLen=img->bitmap_header->height*img->bitmap_header->width*img->bytesPerPixel;
     unsigned char *tmp=(unsigned char*)malloc(sizeof(unsigned char)*dataLen);
     memcpy(tmp, img->pixel_value, sizeof(tmp)); 
     int mask[3][3] = {{-1, -1, -1},
                       {-1,  9, -1},
                       {-1, -1, -1}};
     
-    for (i = 1; i < img-> height - 1; i++) {
-        for (j = 1; j < img->width - 1; j++) {
+    for (i = 1; i < img->bitmap_header-> height - 1; i++) {
+        for (j = 1; j < img->bitmap_header->width - 1; j++) {
             for (k = 0; k < img->bytesPerPixel; k++) {
                 sum = 0;
                 for (m = -1; m <= 1; m++) {
                     for (n = -1; n <= 1; n++) {
                         sum += mask[m + 1][n + 1] * 
-                            tmp[(i + m) * img->width * img->bytesPerPixel + (j + n) * img->bytesPerPixel + k];
+                            tmp[(i + m) * img->bitmap_header->width * img->bytesPerPixel + (j + n) * img->bytesPerPixel + k];
                     }
                 }
                 sum = fmin(255, fmax(0, sum)); 
-                img->pixel_value[i * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k] = 
+                img->pixel_value[i * img->bitmap_header->width * img->bytesPerPixel + j * img->bytesPerPixel + k] = 
                     (unsigned char) sum;
             }
         }
@@ -84,17 +84,17 @@ void sharp(Image *img)
 
 void reflector(Image *img)
 {
-    int dataLen=img->height*img->width*img->bytesPerPixel;
+    int dataLen=img->bitmap_header->height*img->bitmap_header->width*img->bytesPerPixel;
     int i,j,k;
     unsigned char *tmp=(unsigned char*)malloc(sizeof(unsigned char)*dataLen);
     memcpy(tmp,img->pixel_value,sizeof(tmp));
 
-    for(i=0;i<img->height;i++)
+    for(i=0;i<img->bitmap_header->height;i++)
     {
-        for(j=0;j<img->width;j++)
+        for(j=0;j<img->bitmap_header->width;j++)
         {
             for(k=0;k<img->bytesPerPixel;k++)
-                img->pixel_value[i * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k]=tmp[i * img->width * img->bytesPerPixel + (img->width-j-1) * img->bytesPerPixel + k];
+                img->pixel_value[i * img->bitmap_header->width * img->bytesPerPixel + j * img->bytesPerPixel + k]=tmp[i * img->bitmap_header->width * img->bytesPerPixel + (img->bitmap_header->width-j-1) * img->bytesPerPixel + k];
         }
     }
 }
@@ -105,42 +105,42 @@ void sobelEdgeDetection(Image *img)
     // Sobel_X = [-1, 0, 1; -2, 0, 2; -1, 0, 1]
     // Sobel_Y = [-1, -2, -1; 0, 0, 0; 1, 2, 1]
 
-    int dataLen=img->height*img->width*img->bytesPerPixel;
+    int dataLen=img->bitmap_header->height*img->bitmap_header->width*img->bytesPerPixel;
     int i,j,k,sum;
     int Gx,Gy;
     int G;
     unsigned char *tmp=(unsigned char*)malloc(sizeof(unsigned char)*dataLen);
     memcpy(tmp,img->pixel_value,sizeof(tmp));
 
-    for(i=1;i<img->height-1;i++)
+    for(i=1;i<img->bitmap_header->height-1;i++)
     {
-        for(j=1;j<img->width-1;j++)
+        for(j=1;j<img->bitmap_header->width-1;j++)
         {
             for(k=0;k<img->bytesPerPixel;k++)
             {
-                Gx= tmp[(i - 1) * img->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k]*(-1) +
-                    tmp[(i - 1) * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k]*(0) +
-                    tmp[(i - 1) * img->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k]*(1) +
-                    tmp[i * img->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k]*(-2) +
-                    tmp[i * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k]*(0) +
-                    tmp[i * img->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k]*(2) +
-                    tmp[(i + 1) * img->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k]*(-1) +
-                    tmp[(i + 1) * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k]*(0) +
-                    tmp[(i + 1) * img->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k]*(1);
+                Gx= tmp[(i - 1) * img->bitmap_header->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k]*(-1) +
+                    tmp[(i - 1) * img->bitmap_header->width * img->bytesPerPixel + j * img->bytesPerPixel + k]*(0) +
+                    tmp[(i - 1) * img->bitmap_header->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k]*(1) +
+                    tmp[i * img->bitmap_header->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k]*(-2) +
+                    tmp[i * img->bitmap_header->width * img->bytesPerPixel + j * img->bytesPerPixel + k]*(0) +
+                    tmp[i * img->bitmap_header->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k]*(2) +
+                    tmp[(i + 1) * img->bitmap_header->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k]*(-1) +
+                    tmp[(i + 1) * img->bitmap_header->width * img->bytesPerPixel + j * img->bytesPerPixel + k]*(0) +
+                    tmp[(i + 1) * img->bitmap_header->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k]*(1);
 
-                Gx= tmp[(i - 1) * img->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k]*(-1) +
-                    tmp[(i - 1) * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k]*(-2) +
-                    tmp[(i - 1) * img->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k]*(-1) +
-                    tmp[i * img->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k]*(0) +
-                    tmp[i * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k]*(0) +
-                    tmp[i * img->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k]*(0) +
-                    tmp[(i + 1) * img->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k]*(1) +
-                    tmp[(i + 1) * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k]*(2) +
-                    tmp[(i + 1) * img->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k]*(1);
+                Gx= tmp[(i - 1) * img->bitmap_header->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k]*(-1) +
+                    tmp[(i - 1) * img->bitmap_header->width * img->bytesPerPixel + j * img->bytesPerPixel + k]*(-2) +
+                    tmp[(i - 1) * img->bitmap_header->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k]*(-1) +
+                    tmp[i * img->bitmap_header->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k]*(0) +
+                    tmp[i * img->bitmap_header->width * img->bytesPerPixel + j * img->bytesPerPixel + k]*(0) +
+                    tmp[i * img->bitmap_header->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k]*(0) +
+                    tmp[(i + 1) * img->bitmap_header->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k]*(1) +
+                    tmp[(i + 1) * img->bitmap_header->width * img->bytesPerPixel + j * img->bytesPerPixel + k]*(2) +
+                    tmp[(i + 1) * img->bitmap_header->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k]*(1);
 
                 G=sqrt(Gx*Gx+Gy*Gy);
                 G = fmin(255, fmax(0, G));
-                img->pixel_value[i * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k]=G;
+                img->pixel_value[i * img->bitmap_header->width * img->bytesPerPixel + j * img->bytesPerPixel + k]=G;
             }
         }
     }
@@ -149,7 +149,9 @@ void sobelEdgeDetection(Image *img)
 
 void filter(Image *img,int filterIndex)
 {
-    if (filterIndex == 1)
+    if(filterIndex==0)
+     return;
+    else if (filterIndex == 1)
         grayscale(img);
     else if (filterIndex == 2)
         blur(img);
