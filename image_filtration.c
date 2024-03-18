@@ -20,9 +20,9 @@ void main()
     printf("\nPlease select the Filter for the Image : ");
     scanf("%d", &filterIndex);
 
-    // img = readImage(path,formatIndex);
-    // if (!img)
-        // return;
+     img = getImageData(path);
+     if (!img)
+        return;
 
     outputFilename = (char *)malloc(strlen(path) + 10);
     if (!outputFilename)
@@ -41,8 +41,6 @@ void main()
     if(formatIndex==2)strcat(outputFilename, "_new.bmp");
 
     copy(path,outputFilename);
-
-    img=getImageData(path,formatIndex);
 
     filter(img,filterIndex);
 

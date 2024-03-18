@@ -333,9 +333,7 @@ void copy(char *input,char *output)
         fprintf(stderr, "Error: Unable to open file %s\n", output);    
         return;
     }
-
-    // int bufferSize = 1024; // Define buffer size
-    
+   
     char buffer;
     size_t bytesRead=1;
     while (bytesRead>0) {
@@ -345,8 +343,39 @@ void copy(char *input,char *output)
 
 }
 
-Image *getImageData(char *input)
+// Function to get image data for a 24-bit BMP image
+Image *getImageData(char *input) 
 {
+    FILE *inputFile=fopen(input,"rb");
+    if(!inputFile)
+    {
+        fprintf(stderr, "Error: Unable to open file %s\n", input);    
+        return NULL;
+    }
+
+    Image *img=(Image*)malloc(sizeof(Image));
+
+    fseek(inputFile,18,SEEK_SET);
+    fread(&img->height,sizeof(int),1,inputFile);
+    fseek(inputFile,22,SEEK_SET);
+    fread(&img->width,sizeof(int),1,inputFile);
+    fseek(inputFile,28,SEEK_SET);
+    fread(&img->bytesPerPixel,sizeof(int),1,inputFile);
+
+    img->bytesPerPixel/=8;
+
+    int padding = (4 - (img->width * 3) % 4) % 4;
+    img->pixel_value = (unsigned char *)malloc(img->height * img->width * 3);
+    for (int i = 0; i < img->height; i++) {
+        fread(img->pixel_value + i * img->width * 3, 3, img->width, inputFile);
+        fseek(inputFile, padding, SEEK_CUR);
+    }
+
+    return img;
+}
+
+// Function to write a 24-bit BMP image
+void writeBMP(char *input,char *output, Image *img) {
     FILE *inputFile=fopen(input,"rb");
     if(!inputFile)
     {
@@ -354,10 +383,93 @@ Image *getImageData(char *input)
         return;
     }
 
-    Image *img=(Image*)malloc(sizeof(Image));
+    FILE *output_file = fopen(output, "wb");
+    if (output_file == NULL) {
+        printf("Error opening output file.");
+        return;
+    }
 
-    
+    // Copy the header from the input file to the output file
+    char header[54];
+    fread(header, sizeof(char), 54, inputFile);
+    fwrite(header, sizeof(char), 54, output_file);
+
+    fseek(output_file, 54, SEEK_SET);
+    int padding = (4 - (img->width * 3) % 4) % 4;
+    for (int i = 0; i < img->height; i++) {
+        fwrite(img->pixel_value + i * img->width * 3, 3, img->width, output_file);
+        for (int j = 0; j < padding; j++) {
+            fputc(0, output_file);
+        }
+    }
+
+    fclose(inputFile);
+    fclose(output_file);
+
 }
+
+// Image *getImageData(char *input)
+// {
+//     FILE *inputFile=fopen(input,"rb");
+//     if(!inputFile)
+//     {
+//         fprintf(stderr, "Error: Unable to open file %s\n", input);    
+//         return NULL;
+//     }
+
+//     Image *img=(Image*)malloc(sizeof(Image));
+
+//     fseek(inputFile,18,SEEK_SET);
+//     fread(&img->height,sizeof(int),1,inputFile);
+//     fseek(inputFile,22,SEEK_SET);
+//     fread(&img->width,sizeof(int),1,inputFile);
+//     fseek(inputFile,28,SEEK_SET);
+//     fread(&img->bytesPerPixel,sizeof(int),1,inputFile);
+
+
+//     fseek(inputFile, 0, SEEK_END); // move the file pointer to the end of the file
+//     // long sizeInBytes = ftell(inputFile); // get the current position of the file pointer
+//     long sizeInBytes = img->height*img->width*img->bytesPerPixel+54; // get the current position of the file pointer
+
+//     img->pixel_value=( unsigned char*)malloc(sizeof(unsigned char)*sizeInBytes-54);
+//     fseek(inputFile,54,SEEK_SET);
+//     fread(img->pixel_value,sizeof(unsigned char),sizeInBytes-54,inputFile);
+
+//     // char buffer;
+//     // int i=0;
+//     // // while ((buffer = fgetc(inputFile))!=EOF)
+//     // while(i<sizeInBytes-54)
+//     // {   
+//     //     buffer=fgetc(inputFile);
+//     //     img->pixel_value[i]=buffer;
+//     //     i++;
+//     // }
+    
+//     fclose(inputFile);
+//     return img;
+// }
+
+// void writeBMP(char *output,Image *img)
+// {
+//     FILE *outputFile=fopen(output,"wb");
+//     if(!outputFile)
+//     {
+//         fprintf(stderr, "Error: Unable to open file %s\n", output);    
+//         return;
+//     }
+
+//     int i;
+
+//     fseek(outputFile, 0, SEEK_END); // move the file pointer to the end of the file
+//     // long sizeInBytes = ftell(outputFile); // get the current position of the file pointer
+//     long sizeInBytes = img->height*img->width*img->bytesPerPixel+54; // get the current position of the file pointer
+
+
+//     fseek(outputFile,54,SEEK_SET);
+//     fwrite(img->pixel_value,sizeof(unsigned char),sizeInBytes-54,outputFile);
+
+//     fclose(outputFile);
+// }
 
 void writeImage(char *input,char *output,int formatIndex,Image * img)
 {
@@ -365,7 +477,7 @@ void writeImage(char *input,char *output,int formatIndex,Image * img)
         writePGM(input,output,img);
     else
     if (formatIndex == 2);
-        // write(input,output,img);
+        writeBMP(input,output,img);
 }
 
 Image *readImage(char *input,int formatIndex)
