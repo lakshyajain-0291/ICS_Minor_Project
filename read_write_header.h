@@ -110,6 +110,111 @@ void writePGM(char *input,char *output,Image *img)
     fclose(outputFile);
 }
 
+void copy(char *input,char *output)
+{
+    FILE *inputFile=fopen(input,"rb");
+    if(!inputFile)
+    {
+        fprintf(stderr, "Error: Unable to open file %s\n", input);    
+        return;
+    }
+
+    FILE *outputFile=fopen(output,"wb+");
+    if(!outputFile)
+    {
+        fprintf(stderr, "Error: Unable to open file %s\n", output);    
+        return;
+    }
+   
+    char buffer;
+    size_t bytesRead=1;
+    while (bytesRead>0) {
+        bytesRead = fread(&buffer, 1, bytesRead, inputFile);
+        fwrite(&buffer, 1, bytesRead, outputFile);
+    }
+
+}
+
+// Function to get image data for a 24-bit BMP image
+Image *getImageData(char *input) 
+{
+    FILE *inputFile=fopen(input,"rb");
+    if(!inputFile)
+    {
+        fprintf(stderr, "Error: Unable to open file %s\n", input);    
+        return NULL;
+    }
+
+    Image *img=(Image*)malloc(sizeof(Image));
+
+    fseek(inputFile,18,SEEK_SET);
+    fread(&img->height,sizeof(int),1,inputFile);
+    fseek(inputFile,22,SEEK_SET);
+    fread(&img->width,sizeof(int),1,inputFile);
+    fseek(inputFile,28,SEEK_SET);
+    fread(&img->bytesPerPixel,sizeof(int),1,inputFile);
+
+    img->bytesPerPixel/=8;
+
+    int padding = (4 - (img->width * img->bytesPerPixel) % 4) % 4;
+    int i;
+    img->pixel_value = (unsigned char *)malloc(sizeof(unsigned char) * img->height * img->width * img->bytesPerPixel);
+    if (!img->pixel_value) {
+        fprintf(stderr, "Error: Memory allocation failed\n");
+        fclose(inputFile);
+        free(img);
+        return NULL;
+    }
+
+    fseek(inputFile, 54, SEEK_SET);
+    
+    for (i = 0; i < img->height; i++) {
+        fread(img->pixel_value + i * img->width * 3, 3, img->width, inputFile);
+        fseek(inputFile, padding, SEEK_CUR);
+    }
+
+    return img;
+}
+
+// Function to write a 24-bit BMP image
+void writeBMP(char *input,char *output, Image *img) {
+    FILE *inputFile=fopen(input,"rb");
+    if(!inputFile)
+    {
+        fprintf(stderr, "Error: Unable to open file %s\n", input);    
+        return;
+    }
+
+    FILE *output_file = fopen(output, "wb");
+    if (output_file == NULL) {
+        printf("Error opening output file.");
+        return;
+    }
+
+    // Copy the header from the input file to the output file
+    char header[54];
+    fread(header, sizeof(char), 54, inputFile);
+    fwrite(header, sizeof(char), 54, output_file);
+
+    fseek(output_file, 54, SEEK_SET);
+    int padding = (4 - (img->width * 3) % 4) % 4;
+    int i,j;
+    for (i = 0; i < img->height; i++) {
+        fwrite(img->pixel_value + i * img->width * 3, 3, img->width, output_file);
+        for (j = 0; j < padding; j++) {
+            fputc(0, output_file);
+        }
+    }
+
+    fclose(inputFile);
+    fclose(output_file);
+
+}
+
+void writeImage(char *input,char *output,int formatIndex,Image * img)
+{
+    writeBMP(input,output,img);
+}
 
 // Function to read BMP file header
 // void read_bmp_file_header(FILE *file, BMPFileHeader *file_header) {
@@ -317,97 +422,6 @@ void writePGM(char *input,char *output,Image *img)
 //     fclose(outputFile);
 // }
 
-
-void copy(char *input,char *output)
-{
-    FILE *inputFile=fopen(input,"rb");
-    if(!inputFile)
-    {
-        fprintf(stderr, "Error: Unable to open file %s\n", input);    
-        return;
-    }
-
-    FILE *outputFile=fopen(output,"wb+");
-    if(!outputFile)
-    {
-        fprintf(stderr, "Error: Unable to open file %s\n", output);    
-        return;
-    }
-   
-    char buffer;
-    size_t bytesRead=1;
-    while (bytesRead>0) {
-        bytesRead = fread(&buffer, 1, bytesRead, inputFile);
-        fwrite(&buffer, 1, bytesRead, outputFile);
-    }
-
-}
-
-// Function to get image data for a 24-bit BMP image
-Image *getImageData(char *input) 
-{
-    FILE *inputFile=fopen(input,"rb");
-    if(!inputFile)
-    {
-        fprintf(stderr, "Error: Unable to open file %s\n", input);    
-        return NULL;
-    }
-
-    Image *img=(Image*)malloc(sizeof(Image));
-
-    fseek(inputFile,18,SEEK_SET);
-    fread(&img->height,sizeof(int),1,inputFile);
-    fseek(inputFile,22,SEEK_SET);
-    fread(&img->width,sizeof(int),1,inputFile);
-    fseek(inputFile,28,SEEK_SET);
-    fread(&img->bytesPerPixel,sizeof(int),1,inputFile);
-
-    img->bytesPerPixel/=8;
-
-    int padding = (4 - (img->width * 3) % 4) % 4;
-    img->pixel_value = (unsigned char *)malloc(img->height * img->width * 3);
-    for (int i = 0; i < img->height; i++) {
-        fread(img->pixel_value + i * img->width * 3, 3, img->width, inputFile);
-        fseek(inputFile, padding, SEEK_CUR);
-    }
-
-    return img;
-}
-
-// Function to write a 24-bit BMP image
-void writeBMP(char *input,char *output, Image *img) {
-    FILE *inputFile=fopen(input,"rb");
-    if(!inputFile)
-    {
-        fprintf(stderr, "Error: Unable to open file %s\n", input);    
-        return;
-    }
-
-    FILE *output_file = fopen(output, "wb");
-    if (output_file == NULL) {
-        printf("Error opening output file.");
-        return;
-    }
-
-    // Copy the header from the input file to the output file
-    char header[54];
-    fread(header, sizeof(char), 54, inputFile);
-    fwrite(header, sizeof(char), 54, output_file);
-
-    fseek(output_file, 54, SEEK_SET);
-    int padding = (4 - (img->width * 3) % 4) % 4;
-    for (int i = 0; i < img->height; i++) {
-        fwrite(img->pixel_value + i * img->width * 3, 3, img->width, output_file);
-        for (int j = 0; j < padding; j++) {
-            fputc(0, output_file);
-        }
-    }
-
-    fclose(inputFile);
-    fclose(output_file);
-
-}
-
 // Image *getImageData(char *input)
 // {
 //     FILE *inputFile=fopen(input,"rb");
@@ -471,20 +485,3 @@ void writeBMP(char *input,char *output, Image *img) {
 //     fclose(outputFile);
 // }
 
-void writeImage(char *input,char *output,int formatIndex,Image * img)
-{
-    if (formatIndex == 1)
-        writePGM(input,output,img);
-    else
-    if (formatIndex == 2);
-        writeBMP(input,output,img);
-}
-
-Image *readImage(char *input,int formatIndex)
-{
-    if (formatIndex == 1)
-        return readPGM(input);
-
-    if (formatIndex == 2);
-        // return copy(input);
-}

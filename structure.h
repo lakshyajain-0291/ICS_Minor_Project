@@ -14,6 +14,8 @@ typedef struct
     unsigned char *pixel_value;
 }Image;
 
+#endif
+
 // Structure for BMP file header
 // typedef struct {
 //     unsigned short type;            // Magic identifier: "BM"
@@ -47,5 +49,3 @@ typedef struct
 //     int max_value;
 //     unsigned char *pixel_value;
 // }Image;
-
-#endif

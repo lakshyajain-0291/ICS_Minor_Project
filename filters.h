@@ -15,27 +15,6 @@ void grayscale(Image *img)
 
     }
 }
-// void blur(Image *img) {
-//     int dataLen = img->height * img->width * img->bytesPerPixel;
-//     unsigned char *tmp = (unsigned char*)malloc(sizeof(unsigned char) * dataLen);
-//     memcpy(tmp, img->pixel_value, dataLen);
-
-//     for (int i = 1; i < img->height - 1; i++) {
-//         for (int j = 1; j < img->width - 1; j++) {
-//             for (int k = 0; k < img->bytesPerPixel; k++) {
-//                 int sum = 0;
-//                 for (int di = -1; di <= 1; di++) {
-//                     for (int dj = -1; dj <= 1; dj++) {
-//                         sum += tmp[(i + di) * img->width * img->bytesPerPixel + (j + dj) * img->bytesPerPixel + k];
-//                     }
-//                 }
-//                 img->pixel_value[i * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k] = sum / 9;
-//             }
-//         }
-//     }
-
-//     free(tmp);
-// }
 
 void blur(Image *img)
 {
@@ -142,7 +121,7 @@ void sobelEdgeDetection(Image *img)
     int Gx,Gy;
     int G;
     unsigned char *tmp=(unsigned char*)malloc(sizeof(unsigned char)*dataLen);
-    memcpy(tmp,img->pixel_value,sizeof(tmp));
+    memcpy(tmp,img->pixel_value,dataLen);
 
     for(i=1;i<img->height-1;i++)
     {
@@ -160,7 +139,7 @@ void sobelEdgeDetection(Image *img)
                     tmp[(i + 1) * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k]*(0) +
                     tmp[(i + 1) * img->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k]*(1);
 
-                Gx= tmp[(i - 1) * img->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k]*(-1) +
+                Gy= tmp[(i - 1) * img->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k]*(-1) +
                     tmp[(i - 1) * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k]*(-2) +
                     tmp[(i - 1) * img->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k]*(-1) +
                     tmp[i * img->width * img->bytesPerPixel + (j - 1) * img->bytesPerPixel + k]*(0) +
@@ -171,7 +150,7 @@ void sobelEdgeDetection(Image *img)
                     tmp[(i + 1) * img->width * img->bytesPerPixel + (j + 1) * img->bytesPerPixel + k]*(1);
 
                 G=sqrt(Gx*Gx+Gy*Gy);
-                G = fmin(255, fmax(0, G));
+                G = (G > 255) ? 255 : G;
                 img->pixel_value[i * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k]=G;
             }
         }
@@ -179,10 +158,17 @@ void sobelEdgeDetection(Image *img)
     free(tmp);
 }
 
+void negativeImage(Image *img)
+{
+    int dataLen=img->height*img->width*img->bytesPerPixel;
+    int i;
+    for(i=0;i<dataLen;i++)
+        img->pixel_value[i]=255-img->pixel_value[i];
+}
 
 void filter(Image *img,int filterIndex)
 {
-    if(filterIndex<0 || filterIndex>5)
+    if(filterIndex<0 || filterIndex>6)
     {
         printf("\nInvalid Filter Index");
         return;
@@ -199,4 +185,28 @@ void filter(Image *img,int filterIndex)
         sobelEdgeDetection(img);
     else if (filterIndex == 5)
         reflector(img);
+    else if (filterIndex == 6)
+        negativeImage(img);
 }
+
+// void blur(Image *img) {
+//     int dataLen = img->height * img->width * img->bytesPerPixel;
+//     unsigned char *tmp = (unsigned char*)malloc(sizeof(unsigned char) * dataLen);
+//     memcpy(tmp, img->pixel_value, dataLen);
+
+//     for (int i = 1; i < img->height - 1; i++) {
+//         for (int j = 1; j < img->width - 1; j++) {
+//             for (int k = 0; k < img->bytesPerPixel; k++) {
+//                 int sum = 0;
+//                 for (int di = -1; di <= 1; di++) {
+//                     for (int dj = -1; dj <= 1; dj++) {
+//                         sum += tmp[(i + di) * img->width * img->bytesPerPixel + (j + dj) * img->bytesPerPixel + k];
+//                     }
+//                 }
+//                 img->pixel_value[i * img->width * img->bytesPerPixel + j * img->bytesPerPixel + k] = sum / 9;
+//             }
+//         }
+//     }
+
+//     free(tmp);
+// }
